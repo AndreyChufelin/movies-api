@@ -1,15 +1,12 @@
 package main
 
 import (
-	"net/http"
+	"time"
 
-	"github.com/labstack/echo/v4"
+	"github.com/AndreyChufelin/movies-api/internal/server/rest"
 )
 
 func main() {
-	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
-	e.Logger.Fatal(e.Start(":1323"))
+	restServer := rest.NewServer("localhost", "1323", time.Minute, 10*time.Second, 30*time.Second)
+	restServer.Start()
 }
