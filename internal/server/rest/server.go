@@ -130,7 +130,7 @@ func (s *Server) getMovieHandler(c echo.Context) error {
 func (s *Server) healthcheckHandler(c echo.Context) error {
 	version := "1.0.0"
 	return c.JSON(http.StatusOK, envelope{
-		"status": "avaliable",
+		"status": "available",
 		"system_info": map[string]string{
 			"environment": "development",
 			"version":     version,
