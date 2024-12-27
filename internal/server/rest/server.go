@@ -60,7 +60,10 @@ func (s *Server) Start() error {
 	trans, _ := uni.GetTranslator("en")
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	en_translations.RegisterDefaultTranslations(validate, trans)
+	err := en_translations.RegisterDefaultTranslations(validate, trans)
+	if err != nil {
+		return fmt.Errorf("failed to register default translations: %w", err)
+	}
 
 	e := echo.New()
 	e.Validator = &CustomValidator{validator: validate, trans: trans}
@@ -71,7 +74,7 @@ func (s *Server) Start() error {
 	e.GET("/v1/healthcheck", s.healthcheckHandler)
 
 	fmt.Println(s.addr)
-	err := e.Start(s.addr)
+	err = e.Start(s.addr)
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}

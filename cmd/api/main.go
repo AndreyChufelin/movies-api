@@ -13,6 +13,10 @@ import (
 
 func main() {
 	config, err := config.LoadConfig("configs/config-api.toml")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to load config: %v\n", err)
+		os.Exit(1)
+	}
 
 	ctx := context.Background()
 
