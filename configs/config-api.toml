@@ -1,0 +1,16 @@
+[rest]
+host = ""
+port = "1323"
+idle_timeout = "1m"
+read_timeout = "10s"
+write_timeout = "30s"
+
+[db]
+user = "postgres"
+password = "postgres"
+name = "postgres"
+host = "db"
+port = "5432"
+max_open_conns = 25
+max_idle_conns = 25
+max_idle_time = "15m"

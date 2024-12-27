@@ -54,7 +54,7 @@ func NewServer(host, port string, idleTimeout, readTimeout, writeTimeout time.Du
 	}
 }
 
-func (s *Server) Start() {
+func (s *Server) Start() error {
 	en := en.New()
 	uni := ut.New(en, en)
 	trans, _ := uni.GetTranslator("en")
@@ -70,7 +70,13 @@ func (s *Server) Start() {
 	e.GET("/v1/movies/:id", s.getMovieHandler)
 	e.GET("/v1/healthcheck", s.healthcheckHandler)
 
-	e.Logger.Fatal(e.Start(":1323"))
+	fmt.Println(s.addr)
+	err := e.Start(s.addr)
+	if err != nil {
+		return fmt.Errorf("failed to start server: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Server) createMovieHandler(c echo.Context) error {
