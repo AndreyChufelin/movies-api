@@ -79,7 +79,7 @@ func (s *Server) Start() error {
 	e.Use(middleware.BodyLimit("1M"))
 	e.POST("/v1/movies", s.createMovieHandler)
 	e.GET("/v1/movies/:id", s.getMovieHandler)
-	e.PUT("/v1/movies/:id", s.updateMovieHandler)
+	e.PATCH("/v1/movies/:id", s.updateMovieHandler)
 	e.DELETE("/v1/movies/:id", s.deleteMovieHandler)
 	e.GET("/v1/healthcheck", s.healthcheckHandler)
 

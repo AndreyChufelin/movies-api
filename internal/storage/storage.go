@@ -11,6 +11,7 @@ import (
 var (
 	ErrRecordNotFound       = errors.New("record not found")
 	ErrInvalidRuntimeFormat = errors.New("invalid runtime format")
+	ErrEditConflict         = errors.New("edit conflict")
 )
 
 type Movie struct {

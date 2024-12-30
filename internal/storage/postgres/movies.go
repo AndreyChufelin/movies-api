@@ -59,7 +59,7 @@ func (s Storage) UpdateMovie(movie *storage.Movie) error {
 	query := `
 		UPDATE movies
 		SET title = @title, year = @year, runtime = @runtime, genres = @genres, version = version + 1
-		WHERE id = @id
+		WHERE id = @id AND version = @version
 		RETURNING version`
 
 	args := pgx.NamedArgs{
@@ -68,13 +68,14 @@ func (s Storage) UpdateMovie(movie *storage.Movie) error {
 		"year":    movie.Year,
 		"runtime": movie.Runtime,
 		"genres":  movie.Genres,
+		"version": movie.Version,
 	}
 
 	err := s.db.QueryRow(context.Background(), query, args).
 		Scan(&movie.Version)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return storage.ErrRecordNotFound
+			return storage.ErrEditConflict
 		}
 		return fmt.Errorf("failed to query update movie: %w", err)
 	}

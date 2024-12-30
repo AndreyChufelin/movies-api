@@ -74,11 +74,11 @@ func (s *Server) getMovieHandler(c echo.Context) error {
 
 func (s *Server) updateMovieHandler(c echo.Context) error {
 	var input struct {
-		ID      int64           `param:"id"`
-		Title   string          `json:"title"`
-		Year    int32           `json:"year"`
-		Runtime storage.Runtime `json:"runtime"`
-		Genres  []string        `json:"genres"`
+		ID      int64            `param:"id"`
+		Title   *string          `json:"title"`
+		Year    *int32           `json:"year"`
+		Runtime *storage.Runtime `json:"runtime"`
+		Genres  []string         `json:"genres"`
 	}
 
 	err := c.Bind(&input)
@@ -86,13 +86,29 @@ func (s *Server) updateMovieHandler(c echo.Context) error {
 		return bindMovieError(err)
 	}
 
-	movie := &storage.Movie{
-		ID:      input.ID,
-		Title:   input.Title,
-		Year:    input.Year,
-		Runtime: input.Runtime,
-		Genres:  input.Genres,
+	movie, err := s.storage.GetMovie(input.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, storage.ErrRecordNotFound):
+			return echo.NewHTTPError(http.StatusNotFound, "movie not found")
+		default:
+			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+		}
 	}
+
+	if input.Title != nil {
+		movie.Title = *input.Title
+	}
+	if input.Year != nil {
+		movie.Year = *input.Year
+	}
+	if input.Runtime != nil {
+		movie.Runtime = *input.Runtime
+	}
+	if input.Genres != nil {
+		movie.Genres = input.Genres
+	}
+
 	if err = c.Validate(movie); err != nil {
 		return err
 	}
@@ -100,8 +116,11 @@ func (s *Server) updateMovieHandler(c echo.Context) error {
 	err = s.storage.UpdateMovie(movie)
 	if err != nil {
 		switch {
-		case errors.Is(err, storage.ErrRecordNotFound):
-			return echo.NewHTTPError(http.StatusNotFound, "movie not found")
+		case errors.Is(err, storage.ErrEditConflict):
+			return echo.NewHTTPError(
+				http.StatusNotFound,
+				"unable to update the record due to an edit conflict, please try again",
+			)
 		default:
 			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 		}
