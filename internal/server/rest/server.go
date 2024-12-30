@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -21,6 +20,14 @@ type Server struct {
 	idleTimeout time.Duration
 	readTimeout time.Duration
 	writeTimout time.Duration
+	storage     Storage
+}
+
+type Storage interface {
+	CreateMovie(*storage.Movie) error
+	GetMovie(int64) (*storage.Movie, error)
+	UpdateMovie(*storage.Movie) error
+	DeleteMovie(id int64) error
 }
 
 type envelope map[string]interface{}
@@ -45,12 +52,13 @@ func (cv *CustomValidator) Validate(i interface{}) error {
 	return nil
 }
 
-func NewServer(host, port string, idleTimeout, readTimeout, writeTimeout time.Duration) *Server {
+func NewServer(host, port string, idleTimeout, readTimeout, writeTimeout time.Duration, storage Storage) *Server {
 	return &Server{
 		addr:        net.JoinHostPort(host, port),
 		idleTimeout: idleTimeout,
 		readTimeout: readTimeout,
 		writeTimout: writeTimeout,
+		storage:     storage,
 	}
 }
 
@@ -71,6 +79,8 @@ func (s *Server) Start() error {
 	e.Use(middleware.BodyLimit("1M"))
 	e.POST("/v1/movies", s.createMovieHandler)
 	e.GET("/v1/movies/:id", s.getMovieHandler)
+	e.PUT("/v1/movies/:id", s.updateMovieHandler)
+	e.DELETE("/v1/movies/:id", s.deleteMovieHandler)
 	e.GET("/v1/healthcheck", s.healthcheckHandler)
 
 	fmt.Println(s.addr)
@@ -80,60 +90,6 @@ func (s *Server) Start() error {
 	}
 
 	return nil
-}
-
-func (s *Server) createMovieHandler(c echo.Context) error {
-	var input struct {
-		Title   string          `json:"title"`
-		Year    int32           `json:"year"`
-		Runtime storage.Runtime `json:"runtime"`
-		Genres  []string        `json:"genres"`
-	}
-	err := c.Bind(&input)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "bad request")
-	}
-
-	movie := &storage.Movie{
-		Title:   input.Title,
-		Year:    input.Year,
-		Runtime: input.Runtime,
-		Genres:  input.Genres,
-	}
-	if err = c.Validate(movie); err != nil {
-		return err
-	}
-
-	return c.JSON(http.StatusOK, envelope{
-		"movie": movie,
-	})
-}
-
-func (s *Server) getMovieHandler(c echo.Context) error {
-	var id int64
-	err := echo.PathParamsBinder(c).
-		Int64("id", &id).
-		BindError()
-	if err != nil {
-		var verr *echo.BindingError
-		if ok := errors.As(err, &verr); ok {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("wrong %s", verr.Field))
-		}
-		panic("failed to bind pathparams in getMovieHandler")
-	}
-
-	movie := storage.Movie{
-		ID:        id,
-		CreatedAt: time.Now(),
-		Title:     "Casablanca",
-		Runtime:   102,
-		Genres:    []string{"drama", "romance", "war"},
-		Version:   1,
-	}
-
-	return c.JSON(http.StatusOK, envelope{
-		"movie": movie,
-	})
 }
 
 func (s *Server) healthcheckHandler(c echo.Context) error {
