@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/AndreyChufelin/movies-api/internal/storage"
 	"github.com/jackc/pgx/v5"
@@ -22,7 +23,10 @@ func (s Storage) CreateMovie(movie *storage.Movie) error {
 		"genres":  movie.Genres,
 	}
 
-	err := s.db.QueryRow(context.Background(), query, args).
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := s.db.QueryRow(ctx, query, args).
 		Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
 	if err != nil {
 		return fmt.Errorf("failed to query create movie: %w", err)
@@ -40,7 +44,10 @@ func (s Storage) GetMovie(id int64) (*storage.Movie, error) {
 		FROM movies
 		WHERE id = $1`
 
-	rows, err := s.db.Query(context.Background(), query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := s.db.Query(ctx, query, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query get movie: %w", err)
 	}
@@ -71,7 +78,10 @@ func (s Storage) UpdateMovie(movie *storage.Movie) error {
 		"version": movie.Version,
 	}
 
-	err := s.db.QueryRow(context.Background(), query, args).
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := s.db.QueryRow(ctx, query, args).
 		Scan(&movie.Version)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -91,7 +101,11 @@ func (s Storage) DeleteMovie(id int64) error {
 	query := `
 		DELETE FROM movies
 		WHERE id = $1`
-	result, err := s.db.Exec(context.Background(), query, id)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := s.db.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
