@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +23,38 @@ type Movie struct {
 	Runtime   Runtime   `db:"runtime" json:"runtime" validate:"required,gt=0"`
 	Genres    []string  `db:"genres" json:"genres" validate:"required,min=1,max=5"`
 	Version   int32     `db:"version" json:"version"`
+}
+
+type Filters struct {
+	Page         int    `validate:"gt=0,max=10000000"`
+	PageSize     int    `validate:"gt=0,max=100"`
+	Sort         string `validate:"safesort"`
+	SortSafelist []string
+}
+
+func (f Filters) Offset() int {
+	return (f.Page - 1) * f.PageSize
+}
+
+type Metadata struct {
+	CurrentPage  int `json:"current_page,omitempty"`
+	PageSize     int `json:"page_size,omitempty"`
+	FirstPage    int `json:"first_page,omitempty"`
+	LastPage     int `json:"last_page,omitempty"`
+	TotalRecords int `json:"total_records,omitempty"`
+}
+
+func NewMetadata(totalRecords, page, pageSize int) Metadata {
+	if totalRecords == 0 {
+		return Metadata{}
+	}
+	return Metadata{
+		CurrentPage:  page,
+		PageSize:     pageSize,
+		FirstPage:    1,
+		LastPage:     int(math.Ceil(float64(totalRecords) / float64(pageSize))),
+		TotalRecords: totalRecords,
+	}
 }
 
 type Runtime int32

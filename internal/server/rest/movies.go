@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/AndreyChufelin/movies-api/internal/storage"
 	"github.com/labstack/echo/v4"
@@ -50,11 +51,7 @@ func (s *Server) getMovieHandler(c echo.Context) error {
 		Int64("id", &id).
 		BindError()
 	if err != nil {
-		var verr *echo.BindingError
-		if ok := errors.As(err, &verr); ok {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("wrong %s", verr.Field))
-		}
-		panic("failed to bind pathparams in getMovieHandler")
+		return binderError(err)
 	}
 
 	movie, err := s.storage.GetMovie(id)
@@ -137,11 +134,7 @@ func (s *Server) deleteMovieHandler(c echo.Context) error {
 		Int64("id", &id).
 		BindError()
 	if err != nil {
-		var verr *echo.BindingError
-		if ok := errors.As(err, &verr); ok {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("wrong %s", verr.Field))
-		}
-		panic("failed to bind pathparams in getMovieHandler")
+		return binderError(err)
 	}
 
 	err = s.storage.DeleteMovie(id)
@@ -159,6 +152,45 @@ func (s *Server) deleteMovieHandler(c echo.Context) error {
 	})
 }
 
+func (s *Server) listMoviesHandler(c echo.Context) error {
+	var input struct {
+		Title  string
+		Genres []string
+		storage.Filters
+	}
+	var genresParam string
+
+	errs := echo.QueryParamsBinder(c).
+		FailFast(false).
+		String("title", &input.Title).
+		String("genres", &genresParam).
+		Int("page", &input.Page).
+		Int("page_size", &input.PageSize).
+		String("sort", &input.Sort).
+		BindErrors()
+	if errs != nil {
+		return binderErrors(errs)
+	}
+
+	input.Genres = strings.Split(genresParam, ",")
+
+	input.SortSafelist = []string{"id", "title", "year", "runtime", "-id", "-title", "-year", "-runtime"}
+
+	if err := c.Validate(input); err != nil {
+		return err
+	}
+
+	movies, metadata, err := s.storage.GetAllMovies(input.Title, input.Genres, input.Filters)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+	}
+
+	return c.JSON(http.StatusOK, envelope{
+		"movies":   movies,
+		"metadata": metadata,
+	})
+}
+
 func bindMovieError(err error) error {
 	if err != nil {
 		var jerr *json.UnmarshalTypeError
@@ -172,4 +204,33 @@ func bindMovieError(err error) error {
 	}
 
 	return nil
+}
+
+func binderError(err error) error {
+	var verr *echo.BindingError
+	if ok := errors.As(err, &verr); ok {
+		fmt.Println("err: ", err)
+		return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
+			Field:   verr.Field,
+			Message: "invalid value",
+		})
+	}
+	panic("failed to bind pathparams in getMovieHandler")
+}
+
+func binderErrors(errs []error) error {
+	var result []ValidationError
+	for _, err := range errs {
+		var verr *echo.BindingError
+		if ok := errors.As(err, &verr); ok {
+			result = append(result, ValidationError{
+				Field:   verr.Field,
+				Message: "invalid value",
+			})
+			continue
+		}
+		panic("failed to bind pathparams")
+	}
+
+	return echo.NewHTTPError(http.StatusBadRequest, result)
 }
