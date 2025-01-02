@@ -195,10 +195,17 @@ func bindMovieError(err error) error {
 	if err != nil {
 		var jerr *json.UnmarshalTypeError
 		if ok := errors.As(err, &jerr); ok {
-			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid %s", jerr.Field))
+			return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
+				Field:   jerr.Field,
+				Message: "invalid value",
+			})
 		}
 		if errors.Is(err, storage.ErrInvalidRuntimeFormat) {
-			return echo.NewHTTPError(http.StatusBadRequest, "invalid runtime value")
+			return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
+				Field:   "runtime",
+				Message: "invalid value",
+			},
+			)
 		}
 		return echo.NewHTTPError(http.StatusBadRequest, "bad request")
 	}
@@ -209,7 +216,6 @@ func bindMovieError(err error) error {
 func binderError(err error) error {
 	var verr *echo.BindingError
 	if ok := errors.As(err, &verr); ok {
-		fmt.Println("err: ", err)
 		return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
 			Field:   verr.Field,
 			Message: "invalid value",
