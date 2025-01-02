@@ -40,6 +40,7 @@ func main() {
 		config.REST.IdleTimeout,
 		config.REST.ReadTimeout,
 		config.REST.WriteTimeout,
+		storage,
 	)
 	err = restServer.Start()
 	if err != nil {
