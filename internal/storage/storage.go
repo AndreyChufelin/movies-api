@@ -79,6 +79,6 @@ func (r *Runtime) UnmarshalJSON(jsonValue []byte) error {
 		return ErrInvalidRuntimeFormat
 	}
 
-	*r = Runtime(i)
+	*r = Runtime(i) //nolint:gosec
 	return nil
 }
