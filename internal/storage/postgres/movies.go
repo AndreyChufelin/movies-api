@@ -63,7 +63,15 @@ func (s Storage) GetMovie(id int64) (*storage.Movie, error) {
 	return &movie, nil
 }
 
-func (s Storage) GetAllMovies(title string, genres []string, filters storage.Filters) ([]*storage.Movie, storage.Metadata, error) {
+func (s Storage) GetAllMovies(
+	title string,
+	genres []string,
+	filters storage.Filters,
+) (
+	[]*storage.Movie,
+	storage.Metadata,
+	error,
+) {
 	query := fmt.Sprintf(`
 		SELECT  count(*) OVER(), id, created_at, title, year, runtime, genres, version
 		FROM movies

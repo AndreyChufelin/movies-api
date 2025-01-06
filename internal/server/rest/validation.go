@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -25,7 +26,11 @@ type ValidationError struct {
 func (cv *CustomValidator) Validate(i interface{}) error {
 	if err := cv.validator.Struct(i); err != nil {
 		var errs []ValidationError
-		for _, err := range err.(validator.ValidationErrors) {
+		var verr validator.ValidationErrors
+		if ok := errors.As(err, &verr); !ok {
+			panic("error must be of type ValidationErrors")
+		}
+		for _, err := range verr {
 			errs = append(errs, ValidationError{
 				Field:   err.Field(),
 				Message: err.Translate(cv.trans),

@@ -37,7 +37,7 @@ func (s *Storage) Connect(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) Close(ctx context.Context) error {
+func (s *Storage) Close(_ context.Context) error {
 	if s.db == nil {
 		return fmt.Errorf("no connection to close")
 	}

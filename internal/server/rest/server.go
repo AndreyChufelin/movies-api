@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -81,7 +82,8 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 		return
 	}
 
-	if he, ok := err.(*echo.HTTPError); ok {
+	var he *echo.HTTPError
+	if ok := errors.As(err, &he); ok {
 		err := c.JSON(he.Code, envelope{
 			"error": he.Message,
 		})
