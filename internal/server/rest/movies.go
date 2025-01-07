@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,7 +21,7 @@ func (s *Server) createMovieHandler(c echo.Context) error {
 	err := c.Bind(&input)
 	if err != nil {
 		log.Warn("failed to bind input parametrs", "error", err)
-		return bindMovieError(err)
+		return err
 	}
 
 	movie := &storage.Movie{
@@ -56,8 +55,10 @@ func (s *Server) getMovieHandler(c echo.Context) error {
 		Int64("id", &id).
 		BindError()
 	if err != nil {
+		fmt.Println("err", err)
 		log.Warn("failed to bind parameters", "error", err)
-		return binderError(err)
+		return err
+		// return binderError(err)
 	}
 
 	movie, err := s.storage.GetMovie(id)
@@ -89,7 +90,7 @@ func (s *Server) updateMovieHandler(c echo.Context) error {
 	err := c.Bind(&input)
 	if err != nil {
 		log.Warn("failed to bind input", "error", err)
-		return bindMovieError(err)
+		return err
 	}
 
 	movie, err := s.storage.GetMovie(input.ID)
@@ -208,28 +209,6 @@ func (s *Server) listMoviesHandler(c echo.Context) error {
 		"movies":   movies,
 		"metadata": metadata,
 	})
-}
-
-func bindMovieError(err error) error {
-	if err != nil {
-		var jerr *json.UnmarshalTypeError
-		if ok := errors.As(err, &jerr); ok {
-			return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
-				Field:   jerr.Field,
-				Message: "invalid value",
-			})
-		}
-		if errors.Is(err, storage.ErrInvalidRuntimeFormat) {
-			return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
-				Field:   "runtime",
-				Message: "invalid value",
-			},
-			)
-		}
-		return echo.NewHTTPError(http.StatusBadRequest, "bad request")
-	}
-
-	return nil
 }
 
 func binderError(err error) error {

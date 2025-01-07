@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -60,6 +61,7 @@ func (s *Server) Start() error {
 	if err != nil {
 		return fmt.Errorf("failed to create validator: %w", err)
 	}
+	e.Binder = &CustomBinder{}
 	e.Validator = validator
 	e.HTTPErrorHandler = customHTTPErrorHandler
 
@@ -133,4 +135,29 @@ func customHTTPErrorHandler(err error, c echo.Context) {
 	}); err != nil {
 		c.Logger().Error(err)
 	}
+}
+
+type CustomBinder struct{}
+
+func (cb *CustomBinder) Bind(i interface{}, c echo.Context) (err error) {
+	db := new(echo.DefaultBinder)
+	if err := db.Bind(i, c); err != nil {
+		var jerr *json.UnmarshalTypeError
+		if ok := errors.As(err, &jerr); ok {
+			return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
+				Field:   jerr.Field,
+				Message: "invalid value",
+			})
+		}
+		if errors.Is(err, storage.ErrInvalidRuntimeFormat) {
+			return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
+				Field:   "runtime",
+				Message: "invalid value",
+			},
+			)
+		}
+		return echo.NewHTTPError(http.StatusBadRequest, "bad request")
+	}
+
+	return
 }
