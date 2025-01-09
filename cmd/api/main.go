@@ -4,6 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/AndreyChufelin/movies-api/internal/config"
 	"github.com/AndreyChufelin/movies-api/internal/logger"
@@ -24,7 +27,11 @@ func main() {
 		)
 	}
 
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(context.Background(),
+		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer cancel()
+	shutCtx, stop := context.WithTimeout(context.Background(), 10*time.Second)
+	defer stop()
 
 	logg.Info("connecting to database")
 	storage := postgres.NewStorage(
@@ -54,13 +61,23 @@ func main() {
 		config.RateLimiter.Limit,
 		config.RateLimiter.Enabled,
 	)
-	err = restServer.Start()
-	if err != nil {
-		logg.Fatal(
-			"failed to start rest server",
-			"error", err,
-		)
-	}
+	go func() {
+		err = restServer.Start()
+		if err != nil {
+			logg.Fatal(
+				"failed to start rest server",
+				"error", err,
+			)
+		}
+	}()
+	defer func() {
+		if err := restServer.Stop(shutCtx); err != nil {
+			logg.Fatal("failed to stop rest server")
+		}
+	}()
+
+	<-ctx.Done()
+	logg.Info("stopping service")
 }
 
 func exitHandler() {

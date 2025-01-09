@@ -18,6 +18,7 @@ import (
 )
 
 type Server struct {
+	e              *echo.Echo
 	addr           string
 	log            *logger.Logger
 	idleTimeout    time.Duration
@@ -109,12 +110,21 @@ func (s *Server) Start() error {
 	e.DELETE("/v1/movies/:id", s.deleteMovieHandler)
 	e.GET("/v1/healthcheck", s.healthcheckHandler)
 
+	s.e = e
 	s.log.Info("starting REST server")
 	err = e.Start(s.addr)
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
+	return nil
+}
+
+func (s *Server) Stop(ctx context.Context) error {
+	s.log.Info("shutting down rest server")
+	if err := s.e.Shutdown(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
