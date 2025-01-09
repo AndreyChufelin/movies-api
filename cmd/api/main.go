@@ -51,6 +51,8 @@ func main() {
 		config.REST.ReadTimeout,
 		config.REST.WriteTimeout,
 		storage,
+		config.RateLimiter.Limit,
+		config.RateLimiter.Enabled,
 	)
 	err = restServer.Start()
 	if err != nil {

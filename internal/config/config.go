@@ -9,8 +9,9 @@ import (
 )
 
 type Config struct {
-	REST RESTConf
-	DB   DBConf
+	REST        RESTConf
+	DB          DBConf
+	RateLimiter RateLimiterConf
 }
 
 type RESTConf struct {
@@ -30,6 +31,11 @@ type DBConf struct {
 	MaxOpenConns int           `mapstructure:"max_open_conns"`
 	MaxIdleConns int           `mapstructure:"max_idle_conns"`
 	MaxIdleTime  time.Duration `mapstructure:"max_idle_time"`
+}
+
+type RateLimiterConf struct {
+	Limit   int
+	Enabled bool
 }
 
 func LoadConfig(path string) (Config, error) {

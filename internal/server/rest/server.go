@@ -14,15 +14,18 @@ import (
 	"github.com/AndreyChufelin/movies-api/internal/storage"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/time/rate"
 )
 
 type Server struct {
-	addr        string
-	log         *logger.Logger
-	idleTimeout time.Duration
-	readTimeout time.Duration
-	writeTimout time.Duration
-	storage     Storage
+	addr           string
+	log            *logger.Logger
+	idleTimeout    time.Duration
+	readTimeout    time.Duration
+	writeTimout    time.Duration
+	storage        Storage
+	limit          int
+	limiterEnabled bool
 }
 
 type Storage interface {
@@ -43,14 +46,18 @@ func NewServer(
 	readTimeout,
 	writeTimeout time.Duration,
 	storage Storage,
+	limit int,
+	limiterEnabled bool,
 ) *Server {
 	return &Server{
-		log:         logger,
-		addr:        net.JoinHostPort(host, port),
-		idleTimeout: idleTimeout,
-		readTimeout: readTimeout,
-		writeTimout: writeTimeout,
-		storage:     storage,
+		log:            logger,
+		addr:           net.JoinHostPort(host, port),
+		idleTimeout:    idleTimeout,
+		readTimeout:    readTimeout,
+		writeTimout:    writeTimeout,
+		storage:        storage,
+		limit:          limit,
+		limiterEnabled: limiterEnabled,
 	}
 }
 
@@ -65,6 +72,14 @@ func (s *Server) Start() error {
 	e.Validator = validator
 	e.HTTPErrorHandler = customHTTPErrorHandler
 
+	if s.limiterEnabled {
+		fmt.Println("conf", rate.Limit(s.limit))
+		e.Use(
+			middleware.RateLimiter(
+				middleware.NewRateLimiterMemoryStore(rate.Limit(s.limit)),
+			),
+		)
+	}
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:   true,
 		LogURI:      true,
