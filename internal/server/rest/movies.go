@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/AndreyChufelin/movies-api/internal/storage"
+	"github.com/AndreyChufelin/movies-api/pkg/validator"
 	"github.com/labstack/echo/v4"
 )
 
@@ -214,7 +215,7 @@ func (s *Server) listMoviesHandler(c echo.Context) error {
 func binderError(err error) error {
 	var verr *echo.BindingError
 	if ok := errors.As(err, &verr); ok {
-		return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
+		return echo.NewHTTPError(http.StatusBadRequest, validator.ValidationError{
 			Field:   verr.Field,
 			Message: "invalid value",
 		})
@@ -223,11 +224,11 @@ func binderError(err error) error {
 }
 
 func binderErrors(errs []error) error {
-	var result []ValidationError
+	var result []validator.ValidationError
 	for _, err := range errs {
 		var verr *echo.BindingError
 		if ok := errors.As(err, &verr); ok {
-			result = append(result, ValidationError{
+			result = append(result, validator.ValidationError{
 				Field:   verr.Field,
 				Message: "invalid value",
 			})

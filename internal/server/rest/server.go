@@ -12,6 +12,7 @@ import (
 
 	"github.com/AndreyChufelin/movies-api/internal/logger"
 	"github.com/AndreyChufelin/movies-api/internal/storage"
+	"github.com/AndreyChufelin/movies-api/pkg/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/time/rate"
@@ -169,13 +170,13 @@ func (cb *CustomBinder) Bind(i interface{}, c echo.Context) (err error) {
 	if err := db.Bind(i, c); err != nil {
 		var jerr *json.UnmarshalTypeError
 		if ok := errors.As(err, &jerr); ok {
-			return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
+			return echo.NewHTTPError(http.StatusBadRequest, validator.ValidationError{
 				Field:   jerr.Field,
 				Message: "invalid value",
 			})
 		}
 		if errors.Is(err, storage.ErrInvalidRuntimeFormat) {
-			return echo.NewHTTPError(http.StatusBadRequest, ValidationError{
+			return echo.NewHTTPError(http.StatusBadRequest, validator.ValidationError{
 				Field:   "runtime",
 				Message: "invalid value",
 			},
