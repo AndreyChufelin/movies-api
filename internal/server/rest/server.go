@@ -8,8 +8,10 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/AndreyChufelin/movies-api/internal/auth"
 	"github.com/AndreyChufelin/movies-api/internal/logger"
 	"github.com/AndreyChufelin/movies-api/internal/storage"
 	"github.com/AndreyChufelin/movies-api/pkg/validator"
@@ -28,6 +30,7 @@ type Server struct {
 	storage        Storage
 	limit          int
 	limiterEnabled bool
+	auth           *auth.Auth
 }
 
 type Storage interface {
@@ -40,8 +43,25 @@ type Storage interface {
 
 type envelope map[string]interface{}
 
+type AuthContext struct {
+	echo.Context
+}
+
+func (c *AuthContext) GetUser() *storage.User {
+	user, ok := c.Get("user").(*storage.User)
+	if !ok {
+		return nil
+	}
+	return user
+}
+
+func (c *AuthContext) SetUser(user *storage.User) {
+	c.Set("user", user)
+}
+
 func NewServer(
 	logger *logger.Logger,
+	auth *auth.Auth,
 	host,
 	port string,
 	idleTimeout,
@@ -53,6 +73,7 @@ func NewServer(
 ) *Server {
 	return &Server{
 		log:            logger,
+		auth:           auth,
 		addr:           net.JoinHostPort(host, port),
 		idleTimeout:    idleTimeout,
 		readTimeout:    readTimeout,
@@ -104,6 +125,7 @@ func (s *Server) Start() error {
 		},
 	}))
 	e.Use(middleware.BodyLimit("1M"))
+	e.Use(s.AuthMiddleware)
 	e.POST("/v1/movies", s.createMovieHandler)
 	e.GET("/v1/movies/:id", s.getMovieHandler)
 	e.GET("/v1/movies", s.listMoviesHandler)
@@ -138,6 +160,42 @@ func (s *Server) healthcheckHandler(c echo.Context) error {
 			"version":     version,
 		},
 	})
+}
+
+func (s *Server) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		cc := &AuthContext{c}
+		cc.Response().Header().Set("Vary", "Authorization")
+		authHeader := cc.Request().Header.Get("Authorization")
+		if authHeader == "" {
+			s.log.Info("set anonymous user")
+			cc.Set("user", storage.AnonymousUser)
+			return next(cc)
+		}
+
+		headerParts := strings.Split(authHeader, " ")
+		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+			s.log.Warn("token must be bearer")
+			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+		}
+		token := headerParts[1]
+
+		u, err := s.auth.Verify(context.TODO(), token)
+		if err != nil {
+			if errors.Is(err, storage.ErrInvalidToken) {
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+			}
+			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+		}
+
+		user := &storage.User{
+			ID:        u.ID,
+			Activated: u.Activated,
+		}
+		s.log.Info("authenticate user", "user_id", user.ID)
+		cc.Set("user", user)
+		return next(cc)
+	}
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {

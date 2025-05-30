@@ -1,8 +1,12 @@
 module github.com/AndreyChufelin/movies-api
 
-go 1.22.1
+go 1.24.2
 
+toolchain go1.24.3
+
+// replace github.com/AndreyChufelin/movies-auth => ../movies-auth
 require (
+	github.com/AndreyChufelin/movies-auth v0.0.0-20250529115746-c81c45683daf
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.26.0
@@ -10,6 +14,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/spf13/viper v1.19.0
 	golang.org/x/time v0.8.0
+	google.golang.org/grpc v1.72.2
 )
 
 require (
@@ -37,12 +42,14 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/crypto v0.33.0 // indirect
+	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/net v0.34.0 // indirect
-	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

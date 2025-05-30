@@ -18,3 +18,7 @@ max_idle_time = "15m"
 [ratelimiter]
 limit = 20
 enabled = true
+
+[auth]
+host = "localhost"
+port = "50051"

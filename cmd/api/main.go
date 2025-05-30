@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/AndreyChufelin/movies-api/internal/auth"
 	"github.com/AndreyChufelin/movies-api/internal/config"
 	"github.com/AndreyChufelin/movies-api/internal/logger"
 	"github.com/AndreyChufelin/movies-api/internal/server/rest"
@@ -50,8 +51,16 @@ func main() {
 	}
 	defer storage.Close(ctx)
 
+	auth := auth.NewAuth(logg, config.Auth.Host, config.Auth.Port)
+	err = auth.Start()
+	if err != nil {
+		logg.Fatal("failed to start auth")
+	}
+	defer auth.Close()
+
 	restServer := rest.NewServer(
 		logg,
+		auth,
 		config.REST.Host,
 		config.REST.Port,
 		config.REST.IdleTimeout,

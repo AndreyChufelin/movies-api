@@ -12,10 +12,14 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
+      AUTH_HOST: auth
+      AUTH_PORT: 50051
     ports:
       - "1323:1323"
     volumes:
       - ..:/app
+    extra_hosts:
+      - "auth:host-gateway"
   db:
     image: postgres:17
     restart: always
@@ -46,4 +50,3 @@ services:
 
 volumes:
   pg_data:
-    name: ${POSTGRES_VOLUME:-postgres_data_default}

@@ -12,6 +12,7 @@ type Config struct {
 	REST        RESTConf
 	DB          DBConf
 	RateLimiter RateLimiterConf
+	Auth        AuthConf
 }
 
 type RESTConf struct {
@@ -36,6 +37,11 @@ type DBConf struct {
 type RateLimiterConf struct {
 	Limit   int
 	Enabled bool
+}
+
+type AuthConf struct {
+	Host string
+	Port string
 }
 
 func LoadConfig(path string) (Config, error) {

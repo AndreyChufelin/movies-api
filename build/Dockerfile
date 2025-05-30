@@ -1,4 +1,4 @@
-FROM golang:1.23.2 AS base
+FROM golang:1.24.3 AS base
 FROM base AS build
 
 ENV BIN_FILE=/opt/movies/api
@@ -17,7 +17,7 @@ RUN CGO_ENABLED=0 go build \
         -ldflags "$LDFLAGS" \
         -o ${BIN_FILE} cmd/api/*
 
-FROM alpine:3.9 AS prod
+FROM alpine:3.21 AS prod
 
 ENV BIN_FILE="/opt/movies/api"
 COPY --from=build ${BIN_FILE} ${BIN_FILE}
