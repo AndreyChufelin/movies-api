@@ -56,7 +56,6 @@ func (s *Server) getMovieHandler(c echo.Context) error {
 		Int64("id", &id).
 		BindError()
 	if err != nil {
-		fmt.Println("err", err)
 		log.Warn("failed to bind parameters", "error", err)
 		return err
 		// return binderError(err)

@@ -1,5 +1,7 @@
 github.com/AndreyChufelin/movies-auth v0.0.0-20250529115746-c81c45683daf h1:argETs2l/wQKrO/HBQ1lVgXFAD1q7K0+dQK9xjYEZm4=
 github.com/AndreyChufelin/movies-auth v0.0.0-20250529115746-c81c45683daf/go.mod h1:xaLlX00vkaPQdshdS9erJ4106fYJMaoAV7mUzlvqG1c=
+github.com/AndreyChufelin/movies-auth v0.0.0-20250531132035-c10bb82a86e8 h1:dmS+F38IRBLuv9qFA3Pa8w6PKmwP0t7L01Y9xtMm8hE=
+github.com/AndreyChufelin/movies-auth v0.0.0-20250531132035-c10bb82a86e8/go.mod h1:xaLlX00vkaPQdshdS9erJ4106fYJMaoAV7mUzlvqG1c=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=

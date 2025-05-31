@@ -65,8 +65,10 @@ func (a *Auth) Verify(ctx context.Context, token string) (*storage.User, error) 
 		return nil, fmt.Errorf("failed to verify token: %w", err)
 	}
 
-	return &storage.User{
-		ID:        u.Id,
-		Activated: u.Activated,
-	}, nil
+	user := &storage.User{
+		ID:          u.Id,
+		Activated:   u.Activated,
+		Permissions: u.Permissions,
+	}
+	return user, nil
 }

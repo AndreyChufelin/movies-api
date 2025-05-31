@@ -96,7 +96,6 @@ func (s *Server) Start() error {
 	e.HTTPErrorHandler = customHTTPErrorHandler
 
 	if s.limiterEnabled {
-		fmt.Println("conf", rate.Limit(s.limit))
 		e.Use(
 			middleware.RateLimiter(
 				middleware.NewRateLimiterMemoryStore(rate.Limit(s.limit)),
@@ -127,12 +126,12 @@ func (s *Server) Start() error {
 	e.Use(middleware.BodyLimit("1M"))
 	e.Use(s.authMiddleware)
 	m := e.Group("/v1/movies")
-	m.Use(s.requireActivatedUser)
-	m.POST("/v1/movies", s.createMovieHandler)
-	m.GET("/v1/movies/:id", s.getMovieHandler)
-	m.GET("/v1/movies", s.listMoviesHandler)
-	m.PATCH("/v1/movies/:id", s.updateMovieHandler)
-	m.DELETE("/v1/movies/:id", s.deleteMovieHandler)
+	// m.Use(s.requireActivatedUser)
+	m.POST("", s.requirePermission("movies:write", s.createMovieHandler))
+	m.GET("/:id", s.requirePermission("movies:read", s.getMovieHandler))
+	m.GET("", s.requirePermission("movies:read", s.listMoviesHandler))
+	m.PATCH("/:id", s.requirePermission("movies:write", s.updateMovieHandler))
+	m.DELETE("/:id", s.requirePermission("movies:write", s.deleteMovieHandler))
 	e.GET("/v1/healthcheck", s.healthcheckHandler)
 
 	s.e = e
@@ -182,7 +181,7 @@ func (s *Server) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 		token := headerParts[1]
 
-		u, err := s.auth.Verify(context.TODO(), token)
+		user, err := s.auth.Verify(context.TODO(), token)
 		if err != nil {
 			if errors.Is(err, storage.ErrInvalidToken) {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
@@ -190,10 +189,6 @@ func (s *Server) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 		}
 
-		user := &storage.User{
-			ID:        u.ID,
-			Activated: u.Activated,
-		}
 		s.log.Info("authenticate user", "user_id", user.ID)
 		cc.Set("user", user)
 		return next(cc)
@@ -224,6 +219,20 @@ func (s *Server) requireActivatedUser(next echo.HandlerFunc) echo.HandlerFunc {
 		return next(cc)
 	}
 	return s.requireAuthenticatedUser(fn)
+}
+
+func (s *Server) requirePermission(code string, next echo.HandlerFunc) echo.HandlerFunc {
+	fn := func(c echo.Context) error {
+		cc := AuthContext{c}
+		user := cc.GetUser()
+		if !user.IncludePermission(code) {
+			return echo.NewHTTPError(http.StatusForbidden, "not permitted")
+		}
+
+		return next(cc)
+	}
+
+	return s.requireActivatedUser(fn)
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {

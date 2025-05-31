@@ -6,7 +6,7 @@ toolchain go1.24.3
 
 // replace github.com/AndreyChufelin/movies-auth => ../movies-auth
 require (
-	github.com/AndreyChufelin/movies-auth v0.0.0-20250529115746-c81c45683daf
+	github.com/AndreyChufelin/movies-auth v0.0.0-20250531132035-c10bb82a86e8
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator/v10 v10.26.0
