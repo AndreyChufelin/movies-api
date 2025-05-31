@@ -125,12 +125,14 @@ func (s *Server) Start() error {
 		},
 	}))
 	e.Use(middleware.BodyLimit("1M"))
-	e.Use(s.AuthMiddleware)
-	e.POST("/v1/movies", s.createMovieHandler)
-	e.GET("/v1/movies/:id", s.getMovieHandler)
-	e.GET("/v1/movies", s.listMoviesHandler)
-	e.PATCH("/v1/movies/:id", s.updateMovieHandler)
-	e.DELETE("/v1/movies/:id", s.deleteMovieHandler)
+	e.Use(s.authMiddleware)
+	m := e.Group("/v1/movies")
+	m.Use(s.requireActivatedUser)
+	m.POST("/v1/movies", s.createMovieHandler)
+	m.GET("/v1/movies/:id", s.getMovieHandler)
+	m.GET("/v1/movies", s.listMoviesHandler)
+	m.PATCH("/v1/movies/:id", s.updateMovieHandler)
+	m.DELETE("/v1/movies/:id", s.deleteMovieHandler)
 	e.GET("/v1/healthcheck", s.healthcheckHandler)
 
 	s.e = e
@@ -162,7 +164,7 @@ func (s *Server) healthcheckHandler(c echo.Context) error {
 	})
 }
 
-func (s *Server) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func (s *Server) authMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		cc := &AuthContext{c}
 		cc.Response().Header().Set("Vary", "Authorization")
@@ -196,6 +198,32 @@ func (s *Server) AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		cc.Set("user", user)
 		return next(cc)
 	}
+}
+
+func (s *Server) requireAuthenticatedUser(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		cc := AuthContext{c}
+		user := cc.GetUser()
+
+		if user.IsAnonymous() {
+			return echo.NewHTTPError(http.StatusUnauthorized, "you must be authenticated to access this resource")
+		}
+
+		return next(cc)
+	}
+}
+
+func (s *Server) requireActivatedUser(next echo.HandlerFunc) echo.HandlerFunc {
+	fn := func(c echo.Context) error {
+		cc := AuthContext{c}
+		user := cc.GetUser()
+
+		if !user.Activated {
+			return echo.NewHTTPError(http.StatusForbidden, "your account must be activated")
+		}
+		return next(cc)
+	}
+	return s.requireAuthenticatedUser(fn)
 }
 
 func customHTTPErrorHandler(err error, c echo.Context) {
