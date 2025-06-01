@@ -13,6 +13,7 @@ type Config struct {
 	DB          DBConf
 	RateLimiter RateLimiterConf
 	Auth        AuthConf
+	CORS        CORSConfig
 }
 
 type RESTConf struct {
@@ -42,6 +43,10 @@ type RateLimiterConf struct {
 type AuthConf struct {
 	Host string
 	Port string
+}
+
+type CORSConfig struct {
+	Origins []string
 }
 
 func LoadConfig(path string) (Config, error) {

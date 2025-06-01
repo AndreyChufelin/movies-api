@@ -31,6 +31,7 @@ type Server struct {
 	limit          int
 	limiterEnabled bool
 	auth           *auth.Auth
+	corsOrigins    []string
 }
 
 type Storage interface {
@@ -70,6 +71,7 @@ func NewServer(
 	storage Storage,
 	limit int,
 	limiterEnabled bool,
+	corsOrigins []string,
 ) *Server {
 	return &Server{
 		log:            logger,
@@ -81,6 +83,7 @@ func NewServer(
 		storage:        storage,
 		limit:          limit,
 		limiterEnabled: limiterEnabled,
+		corsOrigins:    corsOrigins,
 	}
 }
 
@@ -122,6 +125,10 @@ func (s *Server) Start() error {
 			}
 			return nil
 		},
+	}))
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: s.corsOrigins,
+		AllowHeaders: []string{"Authorization", "Content-Type"},
 	}))
 	e.Use(middleware.BodyLimit("1M"))
 	e.Use(s.authMiddleware)

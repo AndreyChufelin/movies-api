@@ -69,6 +69,7 @@ func main() {
 		storage,
 		config.RateLimiter.Limit,
 		config.RateLimiter.Enabled,
+		config.CORS.Origins,
 	)
 	go func() {
 		err = restServer.Start()
