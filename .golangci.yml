@@ -1,41 +1,8 @@
+version: "2"
 run:
   tests: true
-
-linters-settings:
-  funlen:
-    lines: 150
-    statements: 80
-  depguard:
-    rules:
-      main:
-        files:
-          - $all
-          - "!$test"
-        allow:
-          - $gostd
-          - github.com/AndreyChufelin
-          - "github.com/jackc/pgx/v5"
-          - "github.com/spf13/viper"
-          - "github.com/labstack/echo/v4"
-          - "github.com/labstack/echo/v4/middleware"
-          - "github.com/go-playground/locales/en"
-          - "github.com/go-playground/universal-translator"
-          - "github.com/go-playground/validator/v10"
-          - "github.com/go-playground/validator/v10/translations/en"
-      test:
-        files:
-          - "$test"
-        allow:
-          - $gostd
-          - github.com/AndreyChufelin
-  tagliatelle:
-    case:
-      rules:
-        json: snake
-        db: snake
-
 linters:
-  disable-all: true
+  default: none
   enable:
     - asciicheck
     - bodyclose
@@ -47,20 +14,16 @@ linters:
     - errorlint
     - exhaustive
     - funlen
-    - gci
     - gocognit
     - goconst
     - gocritic
     - gocyclo
     - godot
-    - gofmt
-    - gofumpt
     - goheader
     - gomoddirectives
     - gomodguard
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - importas
     - ineffassign
@@ -77,13 +40,65 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - staticcheck
-    - stylecheck
     - tagliatelle
     - thelper
     - tparallel
-    - typecheck
     - unconvert
     - unparam
     - unused
     - wastedassign
     - whitespace
+  settings:
+    depguard:
+      rules:
+        main:
+          files:
+            - $all
+            - '!$test'
+          allow:
+            - $gostd
+            - github.com/AndreyChufelin
+            - github.com/jackc/pgx/v5
+            - github.com/jackc/pgerrcode
+            - github.com/spf13/viper
+            - golang.org/x/crypto/bcrypt
+            - github.com/labstack/echo
+            - golang.org/x/time/rate
+            - github.com/go-playgroun
+            - google.golang.org/grpc
+        test:
+          files:
+            - $test
+          allow:
+            - $gostd
+            - github.com/AndreyChufelin
+    funlen:
+      lines: 150
+      statements: 80
+    tagliatelle:
+      case:
+        rules:
+          db: snake
+          json: snake
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
